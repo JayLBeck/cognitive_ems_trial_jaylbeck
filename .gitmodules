@@ -1,0 +1,3 @@
+[submodule "egoems-sim"]
+	path = egoems-sim
+	url = git@github.com:UVA-DSA/EgoEMS-Sim.git
