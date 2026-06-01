@@ -15,6 +15,7 @@ import time
 
 import numpy as np
 import cv2
+import requests
 
 
 def load_libsrt():
@@ -174,7 +175,7 @@ def run(args):
             fb = frame_buffers[current_frame]
             ec = expected_chunks[current_frame]
             complete = all(
-                data_type in ec and len(fb[data_type]) == ec[data_type]
+                    data_type in ec and len(fb[data_type]) == ec[data_type]
                 for data_type in needed_types
             )
             if not complete:
@@ -201,11 +202,42 @@ def run(args):
 
 #-----------Part2 Modifications-------------------------------------------------------------------------------
             elif frames % 5 == 0:
-                image = np.frombuffer(payloads[1], dtype=np.uint8)
-                image = image.reshape((args.height, args.width, 3))
 
-                cv2.imshow("frame", image)
-                cv2.waitKey(1)
+                #Convert raw bytes into an image array:
+                image = np.frombuffer(payloads[1], dtype=np.uint8)
+                image = image.reshape((args.height, args.width, 3)).copy() #create a copy because np.frombuffer returns an array that is read only
+
+                success, encoded_image = cv2.imencode(".jpg", image)
+                if not success:
+                    continue
+                image_bytes = encoded_image.tobytes() #encode image into a format the DETR model can process
+                
+                #Send the image to the DETR model for object detection:
+                try:
+                    response = requests.post(
+                            "http://localhost:8000/infer/detr",
+                            data = image_bytes,
+                            headers = {
+                                "Content-Type" : "application/octet-stream",
+                                "x-frame-id" : str(frame_idx)
+                            }
+                    )
+                    result = response.json()
+                    
+                    #Draw bounding boxes over each detected object if the confidence score is >= 0.90:
+                    for detection in result["detections"]:
+                        if detection["score"] < 0.90:
+                            continue
+                        label = detection["label"]
+                        x1, y1, x2, y2 = map(int, detection["box_xyxy"]) #converts bounding box coodinates from floating point numbers to integers
+
+                        cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                        cv2.putText(image, f"{label}: {detection["score"]}"), (x1, max(y1 - 10, 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                       
+                        cv2.imwrite(f"detections{frame_idx}.jpg", image)
+
+                except Exception as e:
+                    print(f"DETR request failed: {e}")
 
 #-----------End of Modifications------------------------------------------------------------------------------
 
