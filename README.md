@@ -36,6 +36,7 @@ UVA DSA - CognitiveEMS - Undergraduate Research Trial Task
         ```bash
         git submodule update --init --recursive
         ```
+       The branch name and commit hash I used are eb852c7f86fe71c2712e39c1fa6f2f3b5671b21d and main respectively. 
     
     DETR Server:
         The prebuilt TensorRT engine is not be compatible with all GPU architectures. On my RTX 5060 Laptop GPU, I repbuilt the engine locally using the EMS-Pipeline repository and DETR checkpoint. Follow the directions at 

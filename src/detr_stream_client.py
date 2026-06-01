@@ -226,13 +226,14 @@ def run(args):
                     
                     #Draw bounding boxes over each detected object if the confidence score is >= 0.90:
                     for detection in result["detections"]:
-                        if detection["score"] < 0.90:
+                        score = detection["score"]
+                        if score < 0.90:
                             continue
                         label = detection["label"]
                         x1, y1, x2, y2 = map(int, detection["box_xyxy"]) #converts bounding box coodinates from floating point numbers to integers
 
                         cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                        cv2.putText(image, f"{label}: {detection["score"]}"), (x1, max(y1 - 10, 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                        cv2.putText(image, f"{label}: {score}", (x1, max(y1 - 10, 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                        
                         cv2.imwrite(f"detections{frame_idx}.jpg", image)
 
